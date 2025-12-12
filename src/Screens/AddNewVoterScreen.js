@@ -35,6 +35,7 @@ export default function AddNewVoterScreen() {
                 </TouchableOpacity>
 
                 <Text style={styles.headerTitle}>Add New Voter</Text>
+                <Text style={styles.headerTitle}>Add New Machine</Text>
             </View>
 
             {/* FORM BODY */}
