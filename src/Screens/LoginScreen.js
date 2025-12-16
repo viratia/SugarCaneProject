@@ -7,93 +7,177 @@ import {
     StyleSheet,
     StatusBar,
     ScrollView,
-    Alert
+    Alert,
+    ImageBackground
 } from "react-native";
+import { loginApi } from '../api/authApi'
+
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { validateLogin } from '../validations/authValidation'
 
 import { Image } from "react-native"
 import EyeOff from '../../assets/fi_eye-off.png'
 import Eye from '../../assets/EyeView.png'
 import Toast from "react-native-toast-message";
+import userIcon from '../../assets/user.png'
+import padlock from '../../assets/padlock.png'
 
 export default function LoginScreen() {
     const [passwordVisible, setPasswordVisible] = useState(false);
+    const [username, setUsername] = useState("");
     const [mobile, setMobile] = useState("");
     const [password, setPassword] = useState("");
 
-    const [mobileError, setMobileError] = useState("");
+    const [usernameError, setUsernameError] = useState("");
     const [passwordError, setPasswordError] = useState("");
 
 
     const navigation = useNavigation();
 
-    const validateMobile = () => {
-        if (mobile.trim() === "") {
-            setMobileError("Please enter mobile number");
-            return false;
-        }
-
-        if (!/^[0-9]{10}$/.test(mobile)) {
-            setMobileError("Enter a valid 10-digit mobile number");
-            return false;
-        }
-
-        setMobileError("");
-        return true;
-    };
-
-    const validatePassword = () => {
-        if (password.trim() === "") {
-            setPasswordError("Please enter password");
-            return false;
-        }
-
-        const strongPasswordRegex =
-            /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
-        if (!strongPasswordRegex.test(password)) {
-            setPasswordError("Password must include: 8 chars, uppercase, lowercase, number & special char");
-            return false;
-        }
-
-        setPasswordError("");
-        return true;
-    };
 
 
-    const login = () => {
-        const isMobileValid = validateMobile();
-        const isPasswordValid = validatePassword();
+    // const login = () => {
 
-        if (!isMobileValid || !isPasswordValid) {
+    //     if (username === "Rushi" && password === "Rushi@123") {
+    //         setUsername("");
+    //         setPassword("");
+
+    //         Toast.show({
+    //             type: 'success',
+    //             text1: 'Login Successful',
+    //             position: "top",
+    //             visibilityTime: 1500,
+    //             autoHide: true,
+    //         })
+
+    //         setTimeout(() => {
+    //             navigation.navigate("MainTabs");
+    //         }, 1000);
+    //     } else {
+    //         Toast.show({
+    //             type: 'error',
+    //             text1: 'Invalid Username or Password',
+    //             position: "top",
+    //             visibilityTime: 2000,
+    //             autoHide: true,
+    //         })
+
+    //     }
+    // };
+
+
+    // const login = async () => {
+    //     if (!username) {
+    //         setMobileError("Username is required");
+    //         return;
+    //     }
+
+    //     if (!password) {
+    //         setPasswordError("Password is required");
+    //         return;
+    //     }
+
+    //     try {
+    //         const response = await fetch("http://10.0.2.2:8080/user/login", {
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //             },
+    //             body: JSON.stringify({
+    //                 username: username,
+    //                 password: password,
+    //             }),
+    //         });
+
+    //         const data = await response.json();
+
+    //         if (response.ok) {
+    //             // success
+    //             Toast.show({
+    //                 type: "success",
+    //                 text1: "Login Successful",
+    //                 position: "top",
+    //                 visibilityTime: 1500,
+    //                 autoHide: true,
+    //             });
+
+    //             setUsername("");
+    //             setPassword("");
+
+    //             setTimeout(() => {
+    //                 navigation.navigate("MainTabs");
+    //             }, 1000);
+
+    //         } else {
+    //             // backend error
+    //             Toast.show({
+    //                 type: "error",
+    //                 text1: data.message || "Invalid Username or Password",
+    //                 position: "top",
+    //                 visibilityTime: 2000,
+    //                 autoHide: true,
+    //             });
+    //         }
+
+    //     } catch (error) {
+    //         console.log(error);
+    //         Toast.show({
+    //             type: "error",
+    //             text1: "Server error. Try again later",
+    //             position: "top",
+    //             visibilityTime: 2000,
+    //             autoHide: true,
+    //         });
+    //     }
+    // };
+
+    const login = async () => {
+
+        const { isValid, errors } = validateLogin({ username, password });
+
+        if (!isValid) {
+            if (errors.username) setUsernameError(errors.username);
+            if (errors.password) setPasswordError(errors.password);
             return;
         }
 
+        const payload = { username, password };
 
-        if (mobile === "9762010287" && password === "Ajinkya@2177") {
-            setMobile("");
-            setPassword("");
+        console.log("Payload sent to API:", payload);
+
+        const response = await loginApi(payload);
+
+        console.log("API response:", response);
+
+        if (response.success && response.data?.token) {
+
+            console.log("Token found, login success");
 
             Toast.show({
-                type: 'success',
-                text1: 'Login Successful',
+                type: "success",
+                text1: "Login Successful",
                 position: "top",
                 visibilityTime: 1500,
-                autoHide: true,
-            })
+            });
+
+            setUsername("");
+            setPassword("");
 
             setTimeout(() => {
                 navigation.navigate("MainTabs");
             }, 1000);
+
         } else {
+
+            console.log("Token missing, login blocked");
+
             Toast.show({
-                type: 'error',
-                text1: 'Invalid Mobile Number or Password',
+                type: "error",
+                text1: response.data?.message || "Invalid Username or Password",
                 position: "top",
                 visibilityTime: 2000,
-                autoHide: true,
-            })
-
+            });
         }
     };
 
@@ -102,94 +186,122 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.mainContainer}>
+            {/* <ImageBackground
+                source={require("../../assets/sugarcane-5525004_1280.jpg")} 
+                style={{ flex: 1 }}
+                resizeMode="cover"
+            > */}
+                {/* Content */}
+                <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
 
-            {/* Content */}
-            <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-                <Text style={styles.title}>Login</Text>
+                    {/* Logo */}
+                    <View style={styles.logoContainer}>
+                        <View style={styles.logoCircle}>
+                            <Image
+                                source={require("../../assets/LeafImage.jpg")}
+                                style={styles.logo}
+                            />
+                        </View>
+                    </View>
+                    <Text style={styles.title}>Welcome Back </Text>
+                    <Text style={styles.subHeading}>
+                        Log in to your account to access the factory dashboard.
+                    </Text>
 
+                    <View style={{ marginBottom: 20 }}>
+                        <Text style={styles.label}>Username</Text>
+                        <View style={[styles.inputContainer,
+                        usernameError ? { borderColor: "red" } : null
+                        ]}>
+                            <Image
+                                source={userIcon}
+                                style={{ width: 22, height: 22, marginLeft: 10, tintColor: "#3a9147ff" }}
+                                resizeMode="contain"
+                            />
+                            <TextInput
+                                value={username}
+                                onChangeText={(text) => {
+                                    setUsername(text);
+                                    setUsernameError("");
+                                }}
+                                placeholder="Enter Username"
+                                keyboardType="text"
+                                style={styles.mobileinput}
+                            />
+                        </View>
 
-                <View style={{ marginBottom: 20 }}>
-                    <Text style={styles.label}>Mobile Number</Text>
-                    <View style={[styles.inputContainer,
-                    mobileError ? { borderColor: "red" } : null
-                    ]}>
-                        <TextInput
-                            value={mobile}
-                            onChangeText={(text) => {
-                                setMobile(text);
-                                setMobileError("");
-                            }}
-                            placeholder="Enter Mobile Number"
-                            keyboardType="numeric"
-                            style={styles.mobileinput}
-                        />
+                        {usernameError ? (
+                            <Text style={styles.errorText}>{usernameError}</Text>
+                        ) : null}
                     </View>
 
-                    {mobileError ? (
-                        <Text style={styles.errorText}>{mobileError}</Text>
-                    ) : null}
-                </View>
+                    {/* Password */}
+                    <Text style={styles.label}>
+                        Password
+                        <Text style={{ color: "red" }}>*</Text>
+                    </Text>
 
-                {/* Password */}
-                <Text style={styles.label}>
-                    Password
-                    <Text style={{ color: "red" }}>*</Text>
-                </Text>
-
-                <View style={[styles.passwordContainer,
-                passwordError ? { borderColor: "red" } : null
-                ]}>
-                    <TextInput
-                        value={password}
-                        onChangeText={(text) => {
-                            setPassword(text);
-                            setPasswordError("");
-                        }}
-                        placeholder="Enter Password"
-                        secureTextEntry={!passwordVisible}
-                        style={styles.passwordInput}
-                    />
-
-                    <TouchableOpacity
-                        onPress={() => setPasswordVisible(!passwordVisible)}
-                        style={styles.eyeIcon}
-                    >
+                    <View style={[styles.passwordContainer,
+                    passwordError ? { borderColor: "red" } : null
+                    ]}>
                         <Image
-                            source={passwordVisible ? EyeOff : Eye}
-                            style={{ width: 22, height: 22, tintColor: "#777" }}
+                            source={padlock}
+                            style={{ width: 22, height: 22, marginLeft: 10, tintColor: "#3a9147ff" }}
                             resizeMode="contain"
                         />
+                        <TextInput
+                            value={password}
+                            onChangeText={(text) => {
+                                setPassword(text);
+                                setPasswordError("");
+                            }}
+                            placeholder="Enter Password"
+                            secureTextEntry={!passwordVisible}
+                            style={styles.passwordInput}
+                        />
+
+                        <TouchableOpacity
+                            onPress={() => setPasswordVisible(!passwordVisible)}
+                            style={styles.eyeIcon}
+                        >
+                            <Image
+                                source={passwordVisible ? EyeOff : Eye}
+                                style={{ width: 22, height: 22, tintColor: "#777" }}
+                                resizeMode="contain"
+                            />
+                        </TouchableOpacity>
+                    </View>
+
+                    {
+                        passwordError ? (
+                            <Text style={styles.errorText}>{passwordError}</Text>
+                        ) : null
+
+                    }
+
+                    <TouchableOpacity onPress={() => navigation.navigate("ForgotPasswordScreen")} style={styles.forgotBtn}>
+                        <Text style={styles.forgotText}>Forgot Password?</Text>
                     </TouchableOpacity>
+
+
+                </ScrollView>
+
+                {/* Login Button Fixed at Bottom */}
+                <View style={styles.bottomButtonContainer}>
+                    <TouchableOpacity onPress={login} style={styles.loginButton}>
+                        <Text style={styles.loginText}>Login</Text>
+                    </TouchableOpacity>
+                    {/* Bottom Text */}
+                    <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 10 }}>
+                        <Text style={styles.bottomText}>Don't have an account? </Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")}>
+                            <Text style={styles.registerText}>Register Now!</Text>
+                        </TouchableOpacity>
+                    </View>
+
                 </View>
 
-                {
-                    passwordError ? (
-                        <Text style={styles.errorText}>{passwordError}</Text>
-                    ) : null
-
-                }
-
-                <TouchableOpacity onPress={() => navigation.navigate("ForgotPasswordScreen")} style={styles.forgotBtn}>
-                    <Text style={styles.forgotText}>Forgot Password?</Text>
-                </TouchableOpacity>
-
-
-            </ScrollView>
-
-            {/* Login Button Fixed at Bottom */}
-            <View style={styles.bottomButtonContainer}>
-                <TouchableOpacity onPress={login} style={styles.loginButton}>
-                    <Text style={styles.loginText}>Login</Text>
-                </TouchableOpacity>
-                {/* Bottom Text */}
-                <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 10 }}>
-                    <Text style={styles.bottomText}>Don't have an account? </Text>
-                    <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")}>
-                        <Text style={styles.registerText}>Register Now!</Text>
-                    </TouchableOpacity>
-                </View>
-
-            </View>
+            {/* </ImageBackground> */}
         </View >
     );
 }
@@ -207,18 +319,42 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        fontSize: 30,
+        fontSize: 28,
         fontWeight: "700",
         textAlign: "center",
-        marginBottom: 40,
+        color: "#0A2E14",
 
     },
-
-    label: {
-        fontWeight: "400",
+    subHeading: {
+        textAlign: "center",
         fontSize: 14,
-        color: "rgba(30,41,59,1)",
-        marginBottom: 5,
+        color: "#3a9147ff",
+        marginBottom: 15,
+        marginTop: 8,
+        padding: 10
+    },
+    logoContainer: {
+        alignItems: "center",
+        marginBottom: 20,
+    },
+    logoCircle: {
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: "#E6FFE6",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    logo: {
+        width: 110,
+        height: 110,
+        resizeMode: "contain",
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: "500",
+        marginBottom: 6,
+        color: "#0A2E14",
     },
 
     input: {
@@ -237,7 +373,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "rgba(255, 197, 132, 1)",
+        borderColor: "#C8E6C9",
         borderRadius: 8,
         paddingRight: 12,
     },
@@ -245,7 +381,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "rgba(255, 197, 132, 1)",
+        borderColor: "#C8E6C9",
         borderRadius: 8,
         paddingRight: 12,
 
@@ -268,19 +404,20 @@ const styles = StyleSheet.create({
     },
 
     forgotText: {
-        color: "rgba(217, 98, 14, 1)",
+        color: "#0A2E14",
         fontWeight: "600",
         textDecorationLine: "underline",
     },
 
     bottomText: {
+        color: "#3a9147ff",
         textAlign: "center",
         fontSize: 14,
 
     },
 
     registerText: {
-        color: "rgba(217, 98, 14, 1)",
+        color: "#0A2E14",
         fontWeight: "600",
         textDecorationLine: "underline",
     },
@@ -288,17 +425,18 @@ const styles = StyleSheet.create({
     bottomButtonContainer: {
         paddingHorizontal: 20,
         paddingBottom: 60,
+
     },
 
     loginButton: {
-        backgroundColor: "rgba(217, 98, 14, 1)",
+        backgroundColor: "#25E600",
         paddingVertical: 14,
         borderRadius: 25,
         alignItems: "center",
     },
 
     loginText: {
-        color: "#fff",
+        color: "#0A2E14",
         fontSize: 14,
         fontWeight: "600",
     },

@@ -2,7 +2,7 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Image, Text } from "react-native";
 
-import VotersListScreen from "../Screens/VotersListScreen";
+import VotersListScreen from "../Screens/HomeScreen";
 import NotificationsScreen from "../Screens/NotificationsScreen";
 import AllocationScreen from "../Screens/AllocationScreen";
 import ProfileScreen from "../Screens/ProfileScreen";
