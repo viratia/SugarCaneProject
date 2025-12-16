@@ -203,7 +203,7 @@ export default function LoginScreen() {
                             />
                         </View>
                     </View>
-                    <Text style={styles.title}>Welcome Back </Text>
+                    <Text style={styles.title}>Welcome Back Soon</Text>
                     <Text style={styles.subHeading}>
                         Log in to your account to access the factory dashboard.
                     </Text>
